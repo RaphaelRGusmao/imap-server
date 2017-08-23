@@ -1,6 +1,6 @@
 #ifndef __ERROR_HANDLER__
 #define __ERROR_HANDLER__
-
+#include <stddef.h>
 
 /* Allocates memory, kills program if insuficient memory. */
 void* emalloc(size_t size);

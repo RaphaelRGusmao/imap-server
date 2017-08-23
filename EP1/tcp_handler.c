@@ -38,10 +38,19 @@ int TCP_SERVER_create_socket(uint16_t socket_port) {
     address.sin_port = htons(socket_port);
     address.sin_addr.s_addr = htonl(INADDR_ANY); // Accepts any connection
 
-    int result = bind(sock, (struct sockaddr *) address, sizeof(address));
-    if (result == -1) {
-        die_with_msg("Unable to bind socket to address");
+    int result = bind(sock, (struct sockaddr *) &address, sizeof(address));
+    if (result < 0) {
+        die_with_msg("Unable to bind socket to address. Socket = %d", sock);
+    }
+
+    result = listen(sock, 1);
+    if (result < 0) {
+      die_with_msg("Unable to listen in socket %d", sock);
     }
     pop_stack();
-    return socket;
+    return sock;
+}
+
+int TCP_SERVER_accept_connection(int socket_id) {
+    return accept(socket_id, (struct sockaddr *) NULL, NULL);
 }
