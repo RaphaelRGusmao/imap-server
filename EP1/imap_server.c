@@ -1,63 +1,125 @@
-#include "tcp_handler.h"
-#include "error_handler.h"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <stdlib.h>
+/******************************************************************************
+ *                               IME-USP (2017)                               *
+ *       MAC0352 - Redes de Computadores e Sistemas Distribuidos - EP1        *
+ *                                                                            *
+ *                                IMAP server                                 *
+ *                                                                            *
+ *                      Pedro Pereira     - NUSP 9778794                      *
+ *                      Raphael R. Gusmao - NUSP 9778561                      *
+ ******************************************************************************/
+
 #include <stdio.h>
-#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include "_aux.h"
+#include "error_handler.h"
+#include "imap_commands.h"
+#include "tcp_handler.h"
 
-#define true 1
-#define false 0
-#define MAXMSG 4095
+#define MAXN 4096
 
-void clean_vector(char *vector, int size) {
-    for (int i = 0; i < size; i++) {
-        vector[i] = '\0';
+char *IMAP_execute (const char *line)
+{
+    add_to_stack("IMAP -> execute()");
+    char *ret = emalloc(MAXN * sizeof(char));
+    string_vector split_line = split(line, " \n\r\t");
+
+    if (split_line.size == 0) {
+        ret = "BAD Empty command line\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "NOOP") == 0) {
+        if (split_line.size == 1)
+            ret = IMAP_noop();
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "LOGOUT") == 0) {
+        if (split_line.size == 1)
+            ret = IMAP_logout();
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "STARTTLS") == 0) {
+        if (split_line.size == 1)
+            ret = IMAP_starttls();
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "AUTHENTICATE") == 0) {
+        if (split_line.size == 2)
+            ret = IMAP_authenticate(split_line.data[1]);
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "LOGIN") == 0) {
+        if (split_line.size == 3)
+            ret = IMAP_login(split_line.data[1], split_line.data[2]);
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "CREATE") == 0) {
+        if (split_line.size == 2)
+            ret = IMAP_create(split_line.data[1]);
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "DELETE") == 0) {
+        if (split_line.size == 2)
+            ret = IMAP_delete(split_line.data[1]);
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "RENAME") == 0) {
+        if (split_line.size == 3)
+            ret = IMAP_rename(split_line.data[1], split_line.data[2]);
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "LIST") == 0) {
+        if (split_line.size == 3)
+            ret = IMAP_list(split_line.data[1], split_line.data[2]);
+        else
+            ret = "BAD Invalid arguments\n";
+    } else if (strcmp(upper_case(split_line.data[0]), "EXPUNGE") == 0) {
+        if (split_line.size == 1)
+            ret = IMAP_expunge();
+        else
+            ret = "BAD Invalid arguments\n";
+    } else {
+        snprintf(ret, MAXN, "BAD No such command as \"%s\"\n", split_line.data[0]);
     }
+
+    free_vector(split_line);
+    pop_stack();
+    return ret;
 }
 
-int main(int argc, char **argv) {
-    int listen_socket;
-
+int main (int argc, char **argv)
+{
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <port>\n", argv[0]);
         exit(1);
     }
 
-    listen_socket = TCP_SERVER_create_socket(atoi(argv[1]));
-
+    int listen_socket = TCP_SERVER_create_socket(atoi(argv[1]));
     printf("Server running at port %s.\n", argv[1]);
-    while (true) {
+
+    for (;;) {
         int connection_socket = TCP_SERVER_accept_connection(listen_socket);
-        if (connection_socket < 0) {
-            die_with_msg("connection_id received -1: failed to accept connection");
+        if (connection_socket == -1) {
+            die_with_msg("Failed to accept connection");
         }
 
-        pid_t childpid = fork();
-        if (childpid == 0) {
-            // CHILD PROCESS
-            // closes passive listening socket
+        if (fork() == 0) {// Child Process
             close(listen_socket);
-            // Buffer that will be fillled with messages
-            char line_buffer[MAXMSG + 1];
+            char line[MAXN];
             ssize_t line_size;
 
-            // BEGIN EP1
-            /* Client sends a message */
-            while ((line_size = read(connection_socket, line_buffer, MAXMSG)) > 0) {
-                write(connection_socket, line_buffer, strlen(line_buffer));
-                clean_vector(line_buffer, MAXMSG + 1);
+            // Client sends a command
+            while ((line_size = read(connection_socket, line, MAXN-1)) > 0) {
+                line[line_size] = 0;
+                char *result = IMAP_execute(line);
+                write(connection_socket, result, strlen(result));
             }
+
             exit(0);
-        }
-        else {
-            // PARENT PROCESS
-            // Closes active connection and returns to listening
+        } else {// Parent Process
             close(connection_socket);
         }
     }
     return 0;
 }
+
+/******************************************************************************/
