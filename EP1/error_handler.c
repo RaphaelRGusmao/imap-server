@@ -6,7 +6,6 @@
  *                                                                            *
  *                      Pedro Pereira     - NUSP 9778794                      *
  *                      Raphael R. Gusmao - NUSP 9778561                      *
- *                     Based in codes from Fernando Mario                     *
  ******************************************************************************/
 
 #include <stdarg.h>
@@ -25,6 +24,7 @@ static stack head = NULL;
 static char name[1024] = "";
 static int program_priority = 0;
 
+/******************************************************************************/
 void print_function_stack ()
 {
     stack next;
@@ -35,6 +35,7 @@ void print_function_stack ()
     }
 }
 
+/******************************************************************************/
 stack create_stack ()
 {
     stack s = emalloc(sizeof(struct function_stack));
@@ -42,6 +43,7 @@ stack create_stack ()
     return s;
 }
 
+/******************************************************************************/
 void add_to_stack (const char* function_name)
 {
     if (head == NULL) {
@@ -55,6 +57,7 @@ void add_to_stack (const char* function_name)
     head->func_name[31] = '\0';
 }
 
+/******************************************************************************/
 void pop_stack ()
 {
     if (head == NULL) {
@@ -66,6 +69,7 @@ void pop_stack ()
     free(i);
 }
 
+/******************************************************************************/
 void die_with_msg (const char* expression, ...)
 {
     char error_msg[1024];
@@ -80,6 +84,7 @@ void die_with_msg (const char* expression, ...)
     exit(-1);
 }
 
+/******************************************************************************/
 void debug_print (int priority, const char* expression, ...)
 {
     if (priority < program_priority) return;
@@ -91,6 +96,7 @@ void debug_print (int priority, const char* expression, ...)
     printf("debug.%d \t%s\n", priority, error_msg);
 }
 
+/******************************************************************************/
 void* emalloc (size_t size)
 {
     void *alloc = malloc(size);
@@ -101,12 +107,14 @@ void* emalloc (size_t size)
     return alloc;
 }
 
+/******************************************************************************/
 void set_program_name (const char* program_name)
 {
     strncpy(name, program_name, 1023);
     name[1023] = '\0';
 }
 
+/******************************************************************************/
 void set_debug_priority (int priority)
 {
     program_priority = priority;

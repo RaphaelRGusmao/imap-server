@@ -1,6 +1,0 @@
-From MAILER-DAEMON Fri Jul  8 12:08:34 2011
-From: Author <author@example.com>
-To: Recipient <recipient@example.com>
-Subject: Sample message 1
-
-This is the body.

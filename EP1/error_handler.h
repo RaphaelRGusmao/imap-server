@@ -6,7 +6,6 @@
  *                                                                            *
  *                      Pedro Pereira     - NUSP 9778794                      *
  *                      Raphael R. Gusmao - NUSP 9778561                      *
- *                     Based in codes from Fernando Mario                     *
  ******************************************************************************/
 
 #ifndef __ERROR_HANDLER__

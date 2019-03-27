@@ -30,8 +30,14 @@ void print_string_vector (string_vector sv);
 // Frees a string_vector
 void free_vector(string_vector to_free);
 
+// Extracts a substring from s
+char *substr (char *s, int begin, int len);
+
 // Converts a string to upper case
 char *upper_case (char *s);
+
+// Returns a formatted string
+char *format (const char* expression, ...);
 
 #endif
 
